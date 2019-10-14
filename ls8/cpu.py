@@ -14,6 +14,7 @@ class CPU:
         """Construct a new CPU."""
         self.pc = 0
         self.ram = [0] * 2048  # 256 or 2048?
+        self.registers = [0] * 8
 
     def load(self):
         """Load a program into memory."""
@@ -86,10 +87,12 @@ class CPU:
             elif command == SAVE:
                 reg = self.ram[self.pc + 1]
                 value = self.ram[self.pc + 2]
+                self.registers[reg] = value
                 self.pc += 3
 
             elif command == PRINT:
-                print(self.ram[self.pc + 1])
+                reg = self.ram[self.pc + 1]
+                print(self.registers[reg])
                 self.pc += 2
 
             else:
