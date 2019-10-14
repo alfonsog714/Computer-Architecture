@@ -2,6 +2,10 @@
 
 import sys
 
+HALT = 1
+SAVE = 130
+PRINT = 71
+
 
 class CPU:
     """Main CPU class."""
@@ -9,7 +13,7 @@ class CPU:
     def __init__(self):
         """Construct a new CPU."""
         self.pc = 0
-        self.ram = [0] * 256  # 2048
+        self.ram = [0] * 2048  # 256 or 2048?
 
     def load(self):
         """Load a program into memory."""
@@ -70,4 +74,24 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+        running = True
+
+        while running:
+            command = self.ram[self.pc]
+
+            if command == HALT:
+                running = False
+                self.pc += 1
+
+            elif command == SAVE:
+                reg = self.ram[self.pc + 1]
+                value = self.ram[self.pc + 2]
+                self.pc += 3
+
+            elif command == PRINT:
+                print(self.ram[self.pc + 1])
+                self.pc += 2
+
+            else:
+                print(f"Unkown instruction: {command}")
+                sys.exit(1)
