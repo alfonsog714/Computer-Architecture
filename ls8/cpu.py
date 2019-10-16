@@ -13,8 +13,13 @@ class CPU:
     def __init__(self):
         """Construct a new CPU."""
         self.pc = 0
-        self.ram = [0] * 2048  # 256 or 2048?
+        self.ram = [0] * 256  # 256 or 2048?
         self.registers = [0] * 8
+        self.instructions = {
+            'HALT': 0b00000001,
+            'LDI': 0b10000010,
+            'PRN': 0b01000111
+        }
 
     def load(self):
         """Load a program into memory."""
@@ -28,26 +33,25 @@ class CPU:
         try:
             with open(sys.argv[1]) as f:
                 for line in f:
-                    # print(line)
 
                     # Ignore anything after a #
                     comment_split = line.split("#")
 
                     # Convert any numbers from binary strings to integers
-                    num = comment_split[0]
+                    num = comment_split[0].strip()
+
                     try:
+                        # int takes a 2nd argument that is the base to use. we use 2 because binary counts using a base of 2
                         x = int(num, 2)
-                        print(x)
+                        self.ram_write(x, address)
+                        address += 1
+
                     except ValueError:
                         continue
 
         except FileNotFoundError:
             print(f"{sys.argv[0]}: {sys.argv[1]} not found.")
             sys.exit(2)
-
-        # for instruction in range(2):
-        #     self.ram[address] = instruction
-        #     address += 1
 
     def ram_read(self, address):
         return self.ram[address]
@@ -92,17 +96,17 @@ class CPU:
         while running:
             command = self.ram[self.pc]
 
-            if command == HALT:
+            if command == self.instructions['HALT']:
                 running = False
                 self.pc += 1
 
-            elif command == SAVE:
+            elif command == self.instructions['LDI']:
                 reg = self.ram[self.pc + 1]
                 value = self.ram[self.pc + 2]
                 self.registers[reg] = value
                 self.pc += 3
 
-            elif command == PRINT:
+            elif command == self.instructions['PRN']:
                 reg = self.ram[self.pc + 1]
                 print(self.registers[reg])
                 self.pc += 2
