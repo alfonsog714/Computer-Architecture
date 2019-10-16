@@ -18,7 +18,8 @@ class CPU:
         self.instructions = {
             'HALT': 0b00000001,
             'LDI': 0b10000010,
-            'PRN': 0b01000111
+            'PRN': 0b01000111,
+            'MUL': 0b10100010
         }
 
     def load(self):
@@ -64,7 +65,11 @@ class CPU:
         """ALU operations."""
 
         if op == "ADD":
-            self.reg[reg_a] += self.reg[reg_b]
+            self.registers[reg_a] += self.registers[reg_b]
+
+        elif op == 'MUL':
+            self.registers[reg_a] *= self.registers[reg_b]
+
         # elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
@@ -110,6 +115,12 @@ class CPU:
                 reg = self.ram[self.pc + 1]
                 print(self.registers[reg])
                 self.pc += 2
+
+            elif command == self.instructions['MUL']:
+                reg_a = self.ram[self.pc + 1]
+                reg_b = self.ram[self.pc + 2]
+                self.alu('MUL', reg_a, reg_b)
+                self.pc += 3
 
             else:
                 print(f"Unkown instruction: {command}")
