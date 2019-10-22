@@ -2,41 +2,75 @@
 
 import sys
 
+HALT = 1
+SAVE = 130
+PRINT = 71
+
+
 class CPU:
     """Main CPU class."""
 
     def __init__(self):
         """Construct a new CPU."""
-        pass
+        self.pc = 0
+        self.ram = [0] * 256  # 256 or 2048?
+        self.registers = [0] * 8
+        self.instructions = {
+            'HALT': 0b00000001,
+            'LDI': 0b10000010,
+            'PRN': 0b01000111,
+            'MUL': 0b10100010
+        }
 
     def load(self):
         """Load a program into memory."""
 
         address = 0
 
-        # For now, we've just hardcoded a program:
+        if len(sys.argv) != 2:
+            print("Usage: file.py <filename>", file=sys.stderr)
+            sys.exit(1)
 
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
-        ]
+        try:
+            with open(sys.argv[1]) as f:
+                for line in f:
 
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+                    # Ignore anything after a #
+                    comment_split = line.split("#")
 
+                    # Convert any numbers from binary strings to integers
+                    num = comment_split[0].strip()
+
+                    try:
+                        # int takes a 2nd argument that is the base to use. we use 2 because binary counts using a base of 2
+                        x = int(num, 2)
+                        self.ram_write(x, address)
+                        address += 1
+
+                    except ValueError:
+                        continue
+
+        except FileNotFoundError:
+            print(f"{sys.argv[0]}: {sys.argv[1]} not found.")
+            sys.exit(2)
+
+    def ram_read(self, address):
+        return self.ram[address]
+
+    def ram_write(self, value, address):
+        self.ram[address] = value
+        return self.ram[address]
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
         if op == "ADD":
-            self.reg[reg_a] += self.reg[reg_b]
-        #elif op == "SUB": etc
+            self.registers[reg_a] += self.registers[reg_b]
+
+        elif op == 'MUL':
+            self.registers[reg_a] *= self.registers[reg_b]
+
+        # elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -48,8 +82,8 @@ class CPU:
 
         print(f"TRACE: %02X | %02X %02X %02X |" % (
             self.pc,
-            #self.fl,
-            #self.ie,
+            # self.fl,
+            # self.ie,
             self.ram_read(self.pc),
             self.ram_read(self.pc + 1),
             self.ram_read(self.pc + 2)
@@ -62,4 +96,32 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+        running = True
+
+        while running:
+            command = self.ram[self.pc]
+
+            if command == self.instructions['HALT']:
+                running = False
+                self.pc += 1
+
+            elif command == self.instructions['LDI']:
+                reg = self.ram[self.pc + 1]
+                value = self.ram[self.pc + 2]
+                self.registers[reg] = value
+                self.pc += 3
+
+            elif command == self.instructions['PRN']:
+                reg = self.ram[self.pc + 1]
+                print(self.registers[reg])
+                self.pc += 2
+
+            elif command == self.instructions['MUL']:
+                reg_a = self.ram[self.pc + 1]
+                reg_b = self.ram[self.pc + 2]
+                self.alu('MUL', reg_a, reg_b)
+                self.pc += 3
+
+            else:
+                print(f"Unkown instruction: {command}")
+                sys.exit(1)
